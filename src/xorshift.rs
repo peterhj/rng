@@ -26,9 +26,8 @@ impl Rng for Xorshiftplus128Rng {
 impl<'a> SeedableRng<&'a [u64]> for Xorshiftplus128Rng {
   fn reseed(&mut self, seed: &'a [u64]) {
     assert!(seed.len() == 2);
-    for p in 0 .. 2 {
-      self.state[p] = seed[p];
-    }
+    self.state[0] = seed[0];
+    self.state[1] = seed[1];
     // XXX: This increases the initial state entropy (many zeros to half zeros).
     // See Figure 4 in <http://arxiv.org/abs/1404.0390> for details.
     for _ in 0 .. 20 {
