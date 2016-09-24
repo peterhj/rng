@@ -1,5 +1,5 @@
 use rand::{Rng, SeedableRng};
-use std::cmp::{min};
+//use std::cmp::{min};
 use std::num::{Wrapping};
 
 #[derive(Clone)]
@@ -25,14 +25,14 @@ impl Rng for Xorshiftplus128Rng {
 
 impl<'a> SeedableRng<&'a [u64]> for Xorshiftplus128Rng {
   fn reseed(&mut self, seed: &'a [u64]) {
-    assert!(seed.len() == 2);
+    assert!(seed.len() >= 2);
     self.state[0] = seed[0];
     self.state[1] = seed[1];
-    // XXX: This increases the initial state entropy (many zeros to half zeros).
+    /*// XXX: This increases the initial state entropy (many zeros to half zeros).
     // See Figure 4 in <http://arxiv.org/abs/1404.0390> for details.
     for _ in 0 .. 20 {
       let _ = self.next_u64();
-    }
+    }*/
   }
 
   fn from_seed(seed: &'a [u64]) -> Xorshiftplus128Rng {
@@ -58,6 +58,10 @@ impl Xorshiftplus128Rng {
   pub fn new<R>(seed_rng: &mut R) -> Xorshiftplus128Rng where R: Rng {
     let seed = [seed_rng.next_u64(), seed_rng.next_u64()];
     Self::from_seed(seed)
+  }
+
+  pub fn state(&self) -> &[u64] {
+    &self.state
   }
 }
 
@@ -90,8 +94,8 @@ impl Rng for Xorshiftstar1024Rng {
 
 impl<'a> SeedableRng<&'a [u64]> for Xorshiftstar1024Rng {
   fn reseed(&mut self, seed: &'a [u64]) {
-    assert!(seed.len() >= 1);
-    for p in 0 .. min(16usize, seed.len()) {
+    assert!(seed.len() >= 16);
+    for p in 0 .. 16 {
       self.state[p] = seed[p];
     }
   }
