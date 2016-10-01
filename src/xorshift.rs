@@ -1,3 +1,5 @@
+use super::{RngState};
+
 use rand::{Rng, SeedableRng};
 //use std::cmp::{min};
 use std::num::{Wrapping};
@@ -5,6 +7,27 @@ use std::num::{Wrapping};
 #[derive(Clone)]
 pub struct Xorshiftplus128Rng {
   state: [u64; 2],
+}
+
+impl Xorshiftplus128Rng {
+  pub fn new<R>(seed_rng: &mut R) -> Xorshiftplus128Rng where R: Rng {
+    let seed = [seed_rng.next_u64(), seed_rng.next_u64()];
+    Self::from_seed(seed)
+  }
+
+  /*pub fn state(&self) -> &[u64] {
+    &self.state
+  }*/
+}
+
+impl RngState for Xorshiftplus128Rng {
+  fn state_size(&self) -> usize {
+    2
+  }
+
+  fn extract_state(&self, state_buf: &mut [u64]) {
+    state_buf.copy_from_slice(&self.state);
+  }
 }
 
 impl Rng for Xorshiftplus128Rng {
@@ -51,17 +74,6 @@ impl SeedableRng<[u64; 2]> for Xorshiftplus128Rng {
 
   fn from_seed(seed: [u64; 2]) -> Xorshiftplus128Rng {
     Self::from_seed(&seed as &[u64])
-  }
-}
-
-impl Xorshiftplus128Rng {
-  pub fn new<R>(seed_rng: &mut R) -> Xorshiftplus128Rng where R: Rng {
-    let seed = [seed_rng.next_u64(), seed_rng.next_u64()];
-    Self::from_seed(seed)
-  }
-
-  pub fn state(&self) -> &[u64] {
-    &self.state
   }
 }
 
