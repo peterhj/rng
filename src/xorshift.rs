@@ -26,7 +26,11 @@ impl RngState for Xorshiftplus128Rng {
   }
 
   fn extract_state(&self, state_buf: &mut [u64]) {
-    state_buf.copy_from_slice(&self.state);
+    state_buf[ .. 2].copy_from_slice(&self.state);
+  }
+
+  fn set_state(&mut self, state_buf: &[u64]) {
+    self.state.copy_from_slice(&state_buf[ .. 2]);
   }
 }
 
