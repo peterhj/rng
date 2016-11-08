@@ -8,4 +8,4 @@ name = "rng"
 path = "src/lib.rs"
 
 [dependencies]
-rand = "*"
+rand = "^0.3"

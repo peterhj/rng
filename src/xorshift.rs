@@ -1,7 +1,7 @@
 use super::{RngState};
 
 use rand::{Rng, SeedableRng};
-//use std::cmp::{min};
+use std::mem::{transmute};
 use std::num::{Wrapping};
 
 #[derive(Clone)]
@@ -15,9 +15,9 @@ impl Xorshiftplus128Rng {
     Self::from_seed(seed)
   }
 
-  /*pub fn state(&self) -> &[u64] {
+  pub fn _state(&self) -> &[u64] {
     &self.state
-  }*/
+  }
 }
 
 impl RngState for Xorshiftplus128Rng {
@@ -46,7 +46,7 @@ impl Rng for Xorshiftplus128Rng {
   }
 
   fn next_u32(&mut self) -> u32 {
-    self.next_u64() as u32
+    (self.next_u64() >> 32) as u32
   }
 }
 
