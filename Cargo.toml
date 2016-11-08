@@ -2,6 +2,10 @@
 name = "rng"
 version = "0.1.0"
 authors = ["Peter Jin <peterhaijin@gmail.com>"]
+license = "BSD"
+description = "Random number generators."
+repository = "https://github.com/peterhj/librng"
+keywords = ["random", "rng"]
 
 [lib]
 name = "rng"
