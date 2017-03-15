@@ -1,7 +1,6 @@
 use super::{RngState};
 
 use rand::{Rng, SeedableRng};
-use std::mem::{transmute};
 use std::num::{Wrapping};
 
 #[derive(Clone)]
@@ -10,6 +9,10 @@ pub struct Xorshiftplus128Rng {
 }
 
 impl Xorshiftplus128Rng {
+  pub fn zeros() -> Xorshiftplus128Rng {
+    Self::from_seed([0, 0])
+  }
+
   pub fn new<R>(seed_rng: &mut R) -> Xorshiftplus128Rng where R: Rng {
     let seed = [seed_rng.next_u64(), seed_rng.next_u64()];
     Self::from_seed(seed)
@@ -50,9 +53,8 @@ impl Rng for Xorshiftplus128Rng {
   }
 }
 
-impl<'a> SeedableRng<&'a [u64]> for Xorshiftplus128Rng {
-  fn reseed(&mut self, seed: &'a [u64]) {
-    assert!(seed.len() >= 2);
+impl SeedableRng<[u64; 2]> for Xorshiftplus128Rng {
+  fn reseed(&mut self, seed: [u64; 2]) {
     self.state[0] = seed[0];
     self.state[1] = seed[1];
     /*// XXX: This increases the initial state entropy (many zeros to half zeros).
@@ -62,7 +64,7 @@ impl<'a> SeedableRng<&'a [u64]> for Xorshiftplus128Rng {
     }*/
   }
 
-  fn from_seed(seed: &'a [u64]) -> Xorshiftplus128Rng {
+  fn from_seed(seed: [u64; 2]) -> Xorshiftplus128Rng {
     let mut rng = Xorshiftplus128Rng{
       state: [0; 2],
     };
@@ -71,13 +73,23 @@ impl<'a> SeedableRng<&'a [u64]> for Xorshiftplus128Rng {
   }
 }
 
-impl SeedableRng<[u64; 2]> for Xorshiftplus128Rng {
-  fn reseed(&mut self, seed: [u64; 2]) {
-    self.reseed(&seed as &[u64]);
+impl<'a> SeedableRng<&'a [u64]> for Xorshiftplus128Rng {
+  fn reseed(&mut self, seed: &'a [u64]) {
+    self.reseed([seed[0], seed[1]]);
   }
 
-  fn from_seed(seed: [u64; 2]) -> Xorshiftplus128Rng {
-    Self::from_seed(&seed as &[u64])
+  fn from_seed(seed: &'a [u64]) -> Xorshiftplus128Rng {
+    Self::from_seed([seed[0], seed[1]])
+  }
+}
+
+impl<'a, R> SeedableRng<&'a mut R> for Xorshiftplus128Rng where R: Rng {
+  fn reseed(&mut self, seed_rng: &'a mut R) {
+    self.reseed([seed_rng.next_u64(), seed_rng.next_u64()]);
+  }
+
+  fn from_seed(seed_rng: &'a mut R) -> Xorshiftplus128Rng {
+    Self::from_seed([seed_rng.next_u64(), seed_rng.next_u64()])
   }
 }
 
