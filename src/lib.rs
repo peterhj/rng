@@ -6,7 +6,7 @@ use std::io::{Read};
 use std::marker::{PhantomData};
 use std::path::{Path, PathBuf};
 
-//pub mod categorical;
+pub mod categorical;
 pub mod xorshift;
 
 pub trait RngSeedExt {
