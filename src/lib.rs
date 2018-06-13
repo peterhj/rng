@@ -1,4 +1,5 @@
 extern crate rand;
+extern crate rand_core;
 
 use rand::{Rng, SeedableRng, thread_rng};
 use std::fs::{File};
@@ -6,7 +7,8 @@ use std::io::{Read};
 use std::marker::{PhantomData};
 use std::path::{Path, PathBuf};
 
-pub mod categorical;
+pub mod experimental;
+pub mod utils;
 pub mod xorshift;
 
 pub trait RngSeedExt {

@@ -1,6 +1,8 @@
 use super::{RngState};
+use utils::*;
 
-use rand::{Rng, SeedableRng};
+use rand::{Rng};
+use rand_core::{RngCore, SeedableRng, Error};
 use std::num::{Wrapping};
 
 #[derive(Clone)]
@@ -9,15 +11,6 @@ pub struct Xorshiftplus128Rng {
 }
 
 impl Xorshiftplus128Rng {
-  pub fn zeros() -> Xorshiftplus128Rng {
-    Self::from_seed([0, 0])
-  }
-
-  pub fn new<R>(seed_rng: &mut R) -> Xorshiftplus128Rng where R: Rng {
-    let seed = [seed_rng.next_u64(), seed_rng.next_u64()];
-    Self::from_seed(seed)
-  }
-
   pub fn _state(&self) -> &[u64] {
     &self.state
   }
@@ -37,7 +30,11 @@ impl RngState for Xorshiftplus128Rng {
   }
 }
 
-impl Rng for Xorshiftplus128Rng {
+impl RngCore for Xorshiftplus128Rng {
+  fn next_u32(&mut self) -> u32 {
+    (self.next_u64() >> 32) as u32
+  }
+
   fn next_u64(&mut self) -> u64 {
     let mut s1 = unsafe { *self.state.get_unchecked(0) };
     let s0 = unsafe { *self.state.get_unchecked(1) };
@@ -48,12 +45,61 @@ impl Rng for Xorshiftplus128Rng {
     (Wrapping(s1) + Wrapping(s0)).0
   }
 
-  fn next_u32(&mut self) -> u32 {
-    (self.next_u64() >> 32) as u32
+  fn fill_bytes(&mut self, dst: &mut [u8]) {
+    // TODO
+    unimplemented!();
+  }
+
+  fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Error> {
+    // TODO
+    unimplemented!();
   }
 }
 
-impl SeedableRng<[u64; 2]> for Xorshiftplus128Rng {
+impl SeedableRng for Xorshiftplus128Rng {
+  type Seed = [u8; 16];
+
+  fn from_seed(seed: [u8; 16]) -> Xorshiftplus128Rng {
+    let mut rng = Xorshiftplus128Rng{
+      state: [0; 2],
+    };
+    u64s_as_u8s_mut(&mut rng.state).copy_from_slice(&seed);
+    rng
+  }
+}
+
+#[derive(Clone)]
+pub struct Xorshiftplus128v2Rng {
+  state: [u64; 2],
+}
+
+impl RngCore for Xorshiftplus128v2Rng {
+  fn next_u32(&mut self) -> u32 {
+    (self.next_u64() >> 32) as u32
+  }
+
+  fn next_u64(&mut self) -> u64 {
+    let mut s1 = unsafe { *self.state.get_unchecked(0) };
+    let s0 = unsafe { *self.state.get_unchecked(1) };
+    let r = (Wrapping(s1) + Wrapping(s0)).0;
+    unsafe { *self.state.get_unchecked_mut(0) = s0 };
+    s1 ^= s1 << 23;
+    unsafe { *self.state.get_unchecked_mut(1) = s1 ^ s0 ^ (s1 >> 18) ^ (s0 >> 5) };
+    r
+  }
+
+  fn fill_bytes(&mut self, dst: &mut [u8]) {
+    // TODO
+    unimplemented!();
+  }
+
+  fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Error> {
+    // TODO
+    unimplemented!();
+  }
+}
+
+/*impl SeedableRng<[u64; 2]> for Xorshiftplus128Rng {
   fn reseed(&mut self, seed: [u64; 2]) {
     self.state[0] = seed[0];
     self.state[1] = seed[1];
@@ -91,9 +137,9 @@ impl<'a, R> SeedableRng<&'a mut R> for Xorshiftplus128Rng where R: Rng {
   fn from_seed(seed_rng: &'a mut R) -> Xorshiftplus128Rng {
     Self::from_seed([seed_rng.next_u64(), seed_rng.next_u64()])
   }
-}
+}*/
 
-pub struct Xorshiftstar1024Rng {
+/*pub struct Xorshiftstar1024Rng {
   state: [u64; 16],
   p: usize,
 }
@@ -136,4 +182,4 @@ impl<'a> SeedableRng<&'a [u64]> for Xorshiftstar1024Rng {
     rng.reseed(seed);
     rng
   }
-}
+}*/
