@@ -1,19 +1,9 @@
 [package]
 name = "rng"
-version = "0.2.0"
-authors = ["Peter Jin <peterhaijin@gmail.com>"]
-license = "BSD-2-Clause"
-description = "Random number generators."
-repository = "https://github.com/peterhj/librng"
-keywords = ["random", "rng"]
-
-[lib]
-name = "rng"
-path = "src/lib.rs"
+version = "0.3.0-devel"
+edition = "2018"
+authors = ["Peter Jin"]
 
 [dependencies]
-#byteorder = "*"
-#rand = { path = "../rand" }
-rand = "^0.5"
-#rand_core = { path = "../rand/rand_core" }
-rand_core = "^0.2.1"
+byteorder = { path = "../byteorder" }
+libc = { path = "../libc" }
