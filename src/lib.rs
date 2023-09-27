@@ -97,6 +97,15 @@ pub struct Buffer32<R, U> {
   cur:  usize,
 }
 
+impl<R, U: AsRef<[u32]> + Default> Buffer32<R, U> {
+  pub fn from<S>(seed: S) -> Buffer32<R, U> where R: From<S> {
+    let gen = R::from(seed);
+    let ubuf = U::default();
+    let cur = u32_slice_bytes_len(ubuf.as_ref());
+    Buffer32{gen, ubuf, cur}
+  }
+}
+
 impl<R: Generator<U>, U: AsRef<[u32]>> Iterator for Buffer32<R, U> {
   type Item = u8;
 
@@ -130,8 +139,8 @@ pub struct Buffer64<R, U> {
   cur:  usize,
 }
 
-impl<R: From<u64>, U: AsRef<[u64]> + Default> From<u64> for Buffer64<R, U> {
-  fn from(seed: u64) -> Buffer64<R, U> {
+impl<R, U: AsRef<[u64]> + Default> Buffer64<R, U> {
+  pub fn from<S>(seed: S) -> Buffer64<R, U> where R: From<S> {
     let gen = R::from(seed);
     let ubuf = U::default();
     let cur = u64_slice_bytes_len(ubuf.as_ref());

@@ -1,5 +1,9 @@
 use crate::{Generator, Buffer64};
 
+use byteorder::{ReadBytesExt, LittleEndian as LE};
+
+use std::io::{Read};
+
 pub fn xoroshiro1024_next(state: &mut [u64; 16], cursor: &mut u8) -> u64 {
   let q = *cursor;
   let np = q.wrapping_add(1) & 15;
@@ -19,8 +23,18 @@ pub struct Xoroshiro1024Generator {
 }
 
 impl From<[u64; 16]> for Xoroshiro1024Generator {
-  fn from(seed: [u64; 16]) -> Xoroshiro1024Generator {
-    Xoroshiro1024Generator{state: seed, cursor: 0}
+  fn from(state: [u64; 16]) -> Xoroshiro1024Generator {
+    Xoroshiro1024Generator{state, cursor: 0}
+  }
+}
+
+impl<'r> From<&'r mut dyn Read> for Xoroshiro1024Generator {
+  fn from(reader: &'r mut dyn Read) -> Xoroshiro1024Generator {
+    let mut state = [0; 16];
+    for k in 0 .. 16 {
+      state[k] = reader.read_u64::<LE>().unwrap();
+    }
+    Xoroshiro1024Generator{state, cursor: 0}
   }
 }
 

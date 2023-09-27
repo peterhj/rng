@@ -1,3 +1,5 @@
+use crate::{Generator, Buffer32};
+
 /* romu32x4_next:
 
 Copyright 2020 Mark A. Overton
@@ -22,3 +24,22 @@ pub fn romu32x4_next(state: &mut [u32; 4]) -> u32 {
   state[3] = (yp.wrapping_add(wp)).rotate_left(9);
   xp
 }
+
+pub struct Romu32x4Generator {
+  state: [u32; 4],
+}
+
+impl From<[u32; 4]> for Romu32x4Generator {
+  fn from(state: [u32; 4]) -> Romu32x4Generator {
+    Romu32x4Generator{state}
+  }
+}
+
+impl Generator<[u32; 1]> for Romu32x4Generator {
+  #[inline]
+  fn next_gen(&mut self, out: &mut [u32; 1]) {
+    out[0] = romu32x4_next(&mut self.state);
+  }
+}
+
+pub type Romu32x4Stream = Buffer32<Romu32x4Generator, [u32; 1]>;

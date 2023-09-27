@@ -1,57 +1,12 @@
 use byteorder::{ReadBytesExt, LittleEndian as LE};
 
+use std::io::{Read};
 use std::ops::{RangeBounds, Bound};
 
 pub trait Draw {
   type Item;
 
-  fn draw<Rng: ReadBytesExt>(self, rng: Rng) -> Self::Item;
-}
-
-/*impl<R: RangeBounds<u32>> Draw for R {
-  type Item = u32;
-
-  fn draw<Rng: ReadBytesExt>(self, rng: Rng) -> u32 {
-    draw_range_u32(self, rng)
-  }
-}*/
-
-pub fn draw_range_u8<R: RangeBounds<u8>, Rng: ReadBytesExt>(r: R, rng: Rng) -> u8 {
-  let lb = match r.start_bound() {
-    Bound::Included(&lb) => lb,
-    Bound::Excluded(&lb) => lb + 1,
-    Bound::Unbounded => 0
-  };
-  let ub = match r.end_bound() {
-    Bound::Included(&ub) => ub + 1,
-    Bound::Excluded(&ub) => ub,
-    Bound::Unbounded => panic!("bug")
-  };
-  lb + (FastRangeU32::new((ub - lb) as _).draw(rng) as u8)
-}
-
-pub fn draw_range_u32<R: RangeBounds<u32>, Rng: ReadBytesExt>(r: R, rng: Rng) -> u32 {
-  let lb = match r.start_bound() {
-    Bound::Included(&lb) => lb,
-    Bound::Excluded(&lb) => lb + 1,
-    Bound::Unbounded => 0
-  };
-  let ub = match r.end_bound() {
-    Bound::Included(&ub) => ub + 1,
-    Bound::Excluded(&ub) => ub,
-    Bound::Unbounded => panic!("bug")
-  };
-  lb + FastRangeU32::new(ub - lb).draw(rng)
-}
-
-impl<'a, T: Copy> Draw for &'a [T] {
-  type Item = T;
-
-  fn draw<Rng: ReadBytesExt>(self, rng: Rng) -> T {
-    let mut r = FastRangeU32::new(self.len() as _);
-    let i = r.draw(rng);
-    self[i as usize]
-  }
+  fn draw<Rng: Read>(self, rng: Rng) -> Self::Item;
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -112,5 +67,68 @@ impl FastRangeU32 {
       }
     }
     (m >> 32) as u32
+  }
+}
+
+/*impl<R: RangeBounds<u32>> Draw for R {
+  type Item = u32;
+
+  fn draw<Rng: Read>(self, rng: Rng) -> u32 {
+    draw_range_u32(self, rng)
+  }
+}*/
+
+pub fn draw_range_u8<R: RangeBounds<u8>, Rng: Read>(r: R, rng: Rng) -> u8 {
+  let lb = match r.start_bound() {
+    Bound::Included(&lb) => lb,
+    Bound::Excluded(&lb) => lb + 1,
+    Bound::Unbounded => 0
+  };
+  let ub = match r.end_bound() {
+    Bound::Included(&ub) => ub + 1,
+    Bound::Excluded(&ub) => ub,
+    Bound::Unbounded => panic!("bug")
+  };
+  lb + (FastRangeU32::new((ub - lb) as _).draw(rng) as u8)
+}
+
+pub fn draw_range_u32<R: RangeBounds<u32>, Rng: Read>(r: R, rng: Rng) -> u32 {
+  let lb = match r.start_bound() {
+    Bound::Included(&lb) => lb,
+    Bound::Excluded(&lb) => lb + 1,
+    Bound::Unbounded => 0
+  };
+  let ub = match r.end_bound() {
+    Bound::Included(&ub) => ub + 1,
+    Bound::Excluded(&ub) => ub,
+    Bound::Unbounded => panic!("bug")
+  };
+  lb + FastRangeU32::new(ub - lb).draw(rng)
+}
+
+impl<'a, T: Copy> Draw for &'a [T] {
+  type Item = T;
+
+  fn draw<Rng: Read>(self, rng: Rng) -> T {
+    let mut r = FastRangeU32::new(self.len() as _);
+    let i = r.draw(rng);
+    self[i as usize]
+  }
+}
+
+pub fn shuffle<S: AsMut<[T]>, T, R: ReadBytesExt>(mut buf: S, mut rng: R) {
+  let mut buf = buf.as_mut();
+  if buf.len() <= 1 {
+    return;
+  }
+  assert!(buf.len() <= u32::max_value() as usize);
+  let len = buf.len() as u32;
+  let mut r = FastRangeU32::default();
+  for off in 0 .. len - 1 {
+    r.reset(len - off);
+    let i = r.draw(&mut rng);
+    if i != 0 {
+      buf.swap(off as usize, (off + i) as usize);
+    }
   }
 }
