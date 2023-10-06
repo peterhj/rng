@@ -98,6 +98,14 @@ pub struct Buffer32<R, U> {
 }
 
 impl<R, U: AsRef<[u32]> + Default> Buffer32<R, U> {
+  pub fn new(gen: R) -> Buffer32<R, U> {
+    let ubuf = U::default();
+    let cur = u32_slice_bytes_len(ubuf.as_ref());
+    Buffer32{gen, ubuf, cur}
+  }
+}
+
+impl<R, U: AsRef<[u32]> + Default> Buffer32<R, U> {
   pub fn from<S>(seed: S) -> Buffer32<R, U> where R: From<S> {
     let gen = R::from(seed);
     let ubuf = U::default();
@@ -117,7 +125,7 @@ impl<R: Generator<U>, U: AsRef<[u32]>> Iterator for Buffer32<R, U> {
       self.cur = 1;
       return Some(self.ubuf.as_ref()[0] as u8);
     }
-    let x = (self.ubuf.as_ref()[self.cur / 4] >> (self.cur * 8)) as u8;
+    let x = (self.ubuf.as_ref()[self.cur / 4] >> ((self.cur % 4) * 8)) as u8;
     self.cur += 1;
     Some(x)
   }
@@ -140,6 +148,14 @@ pub struct Buffer64<R, U> {
 }
 
 impl<R, U: AsRef<[u64]> + Default> Buffer64<R, U> {
+  pub fn new(gen: R) -> Buffer64<R, U> {
+    let ubuf = U::default();
+    let cur = u64_slice_bytes_len(ubuf.as_ref());
+    Buffer64{gen, ubuf, cur}
+  }
+}
+
+impl<R, U: AsRef<[u64]> + Default> Buffer64<R, U> {
   pub fn from<S>(seed: S) -> Buffer64<R, U> where R: From<S> {
     let gen = R::from(seed);
     let ubuf = U::default();
@@ -159,7 +175,7 @@ impl<R: Generator<U>, U: AsRef<[u64]>> Iterator for Buffer64<R, U> {
       self.cur = 1;
       return Some(self.ubuf.as_ref()[0] as u8);
     }
-    let x = (self.ubuf.as_ref()[self.cur / 8] >> (self.cur * 8)) as u8;
+    let x = (self.ubuf.as_ref()[self.cur / 8] >> ((self.cur % 8) * 8)) as u8;
     self.cur += 1;
     Some(x)
   }
