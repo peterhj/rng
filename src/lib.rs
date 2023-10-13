@@ -1,7 +1,7 @@
 extern crate byteorder;
 extern crate libc;
 
-use std::io::{Read, Error as IoError};
+use std::io::{Read, Seek, SeekFrom, Error as IoError};
 use std::mem::{size_of};
 use std::slice::{from_raw_parts};
 
@@ -138,6 +138,33 @@ impl<R: Generator<U>, U: AsRef<[u32]>> Read for Buffer32<R, U> {
       *x = self.next().unwrap();
     }
     Ok(buf.len())
+  }
+}
+
+impl<R: Generator<U> + Seek, U: AsRef<[u32]>> Seek for Buffer32<R, U> {
+  fn seek(&mut self, pos: SeekFrom) -> Result<u64, IoError> {
+    let ubuf_len = u32_slice_bytes_len(self.ubuf.as_ref());
+    match pos {
+      SeekFrom::Start(p) => {
+        let p_rem = p % (ubuf_len as u64);
+        self.gen.seek(SeekFrom::Start(p - p_rem))?;
+        self.cur = match p_rem {
+          0 => ubuf_len,
+          _ => {
+            self.gen.next_gen(&mut self.ubuf);
+            p_rem as usize
+          }
+        };
+        Ok(p)
+      }
+      _ => unimplemented!()
+    }
+  }
+
+  fn stream_position(&mut self) -> Result<u64, IoError> {
+    let ubuf_len = u32_slice_bytes_len(self.ubuf.as_ref());
+    let pbase = self.gen.stream_position()?;
+    Ok(pbase - (ubuf_len - self.cur) as u64)
   }
 }
 

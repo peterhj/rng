@@ -2,7 +2,7 @@ use crate::{Generator, Buffer32};
 
 use byteorder::{ReadBytesExt, LittleEndian as LE};
 
-use std::io::{Read, Cursor};
+use std::io::{Read, Seek, SeekFrom, Cursor, Error as IoError};
 
 #[inline]
 pub fn chacha20_quarter_round(a: &mut u32, b: &mut u32, c: &mut u32, d: &mut u32) {
@@ -15,7 +15,6 @@ pub fn chacha20_quarter_round(a: &mut u32, b: &mut u32, c: &mut u32, d: &mut u32
 pub fn chacha20_next(state: &mut [u32; 16], out: &mut [u32; 16]) {
   let mut x = *state;
   let mut ctr = (x[12] as u64) | ((x[13] as u64) << 32);
-  assert!(ctr != 0);
   {
     let [mut x0, mut x1, mut x2, mut x3,
          mut x4, mut x5, mut x6, mut x7,
@@ -56,7 +55,7 @@ impl From<[u32; 16]> for ChaCha20Generator {
 }
 
 impl ChaCha20Generator {
-  pub fn from_parts<C: AsRef<[u8]>, K: AsRef<[u8]>>(constant_buf: C, key_buf: K, counter: u64, nonce: u64) -> ChaCha20Generator {
+  pub fn from_parts<C: AsRef<[u8]>, K: AsRef<[u8]>>(constant_buf: C, key_buf: K, nonce: u64, ctr: u64) -> ChaCha20Generator {
     let mut state = [0; 16];
     let mut constant = Cursor::new(constant_buf.as_ref());
     for k in 0 .. 4 {
@@ -68,17 +67,17 @@ impl ChaCha20Generator {
       state[k] = key.read_u32::<LE>().unwrap();
     }
     drop(key);
-    state[12] = counter as u32;
-    state[13] = (counter >> 32) as u32;
+    state[12] = ctr as u32;
+    state[13] = (ctr >> 32) as u32;
     state[14] = nonce as u32;
     state[15] = (nonce >> 32) as u32;
     ChaCha20Generator{state}
   }
 
-  pub fn new_default<R: Read>(mut key_seed: R, counter: u64, nonce: u64) -> ChaCha20Generator {
+  pub fn new_default<R: Read>(mut key_seed: R, nonce: u64, ctr: u64) -> ChaCha20Generator {
     let mut key_buf = [0; 32];
     key_seed.read_exact(&mut key_buf).unwrap();
-    ChaCha20Generator::from_parts(b"extend 32-byte k", key_buf, counter, nonce)
+    ChaCha20Generator::from_parts(b"extend 32-byte k", key_buf, nonce, ctr)
   }
 }
 
@@ -86,6 +85,26 @@ impl Generator<[u32; 16]> for ChaCha20Generator {
   #[inline]
   fn next_gen(&mut self, out: &mut [u32; 16]) {
     chacha20_next(&mut self.state, out);
+  }
+}
+
+impl Seek for ChaCha20Generator {
+  fn seek(&mut self, pos: SeekFrom) -> Result<u64, IoError> {
+    match pos {
+      SeekFrom::Start(p) => {
+        assert_eq!(p % 64, 0);
+        let ctr = p / 64;
+        self.state[12] = ctr as u32;
+        self.state[13] = (ctr >> 32) as u32;
+        Ok(p)
+      }
+      _ => unimplemented!()
+    }
+  }
+
+  fn stream_position(&mut self) -> Result<u64, IoError> {
+    let ctr = (self.state[12] as u64) | ((self.state[13] as u64) << 32);
+    Ok(ctr * 64)
   }
 }
 
@@ -121,9 +140,9 @@ fn test_chacha20_ietf_test_vector_2_3_1() {
   for k in 0 .. 32 {
     key_buf[k as usize] = k;
   }
-  let counter: u64 = 0x900_0000_0000_0001;
+  let ctr: u64 = 0x900_0000_0000_0001;
   let nonce: u64 = 0x4a00_0000;
-  let mut gen = ChaCha20Generator::new(constant_buf, key_buf, counter, nonce);
+  let mut gen = ChaCha20Generator::from_parts(constant_buf, key_buf, nonce, ctr);
   let mut out = [0; 16];
   gen.next_gen(&mut out);
   assert_eq!(out[0], 0xe4e7f110);
