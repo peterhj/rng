@@ -1,5 +1,6 @@
 extern crate byteorder;
-extern crate libc;
+extern crate getrandom;
+//extern crate libc;
 
 use std::io::{Read, Seek, SeekFrom, Error as IoError};
 use std::mem::{size_of};
@@ -7,9 +8,10 @@ use std::slice::{from_raw_parts};
 
 pub mod chacha20;
 pub mod dist;
+pub mod os;
 pub mod romu;
 pub mod splitmix;
-pub mod urandom;
+//pub mod urandom;
 pub mod xorshift;
 
 pub trait Generator<U> {
