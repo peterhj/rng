@@ -96,7 +96,7 @@ macro_rules! draw_range {
     impl Draw for $rg<$ty> {
       type Item = $ty;
 
-      fn draw<Rng: Read>(self, mut rng: Rng) -> $ty {
+      fn draw<Rng: Read>(self, rng: Rng) -> $ty {
         let lb = match self.start_bound() {
           Bound::Included(&lb) => lb,
           Bound::Excluded(&lb) => lb + 1,
@@ -170,7 +170,7 @@ impl<'a, T: Copy> Draw for &'a [T] {
 }
 
 pub fn shuffle<S: AsMut<[T]>, T, R: Read>(mut buf: S, mut rng: R) {
-  let mut buf = buf.as_mut();
+  let buf = buf.as_mut();
   if buf.len() <= 1 {
     return;
   }

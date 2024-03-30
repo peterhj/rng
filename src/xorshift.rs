@@ -4,6 +4,17 @@ use byteorder::{ReadBytesExt, LittleEndian as LE};
 
 use std::io::{Read};
 
+/* xoroshiro1024_next, xorshiftplus128v1_next, xorshiftplus128v2_next:
+
+Written in _ by Sebastiano Vigna (vigna@acm.org)
+
+To the extent possible under law, the author has dedicated all copyright
+and related and neighboring rights to this software to the public domain
+worldwide. This software is distributed without any warranty.
+
+See <http://creativecommons.org/publicdomain/zero/1.0/>. */
+
+// This is the xoroshiro1024++ variant.
 pub fn xoroshiro1024_next(state: &mut [u64; 16], cursor: &mut u8) -> u64 {
   let q = *cursor;
   let np = q.wrapping_add(1) & 15;
