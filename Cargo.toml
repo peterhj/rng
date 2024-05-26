@@ -7,5 +7,5 @@ license = "ISC OR MIT OR Apache-2.0"
 
 [dependencies]
 byteorder = { path = "../byteorder" }
-getrandom = { path = "../getrandom", default-features = false, features = ["std"] }
-#libc = { path = "../libc" }
+#getrandom = { path = "../getrandom", default-features = false, features = ["std"] }
+libc = { path = "../libc" }

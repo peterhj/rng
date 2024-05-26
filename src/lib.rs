@@ -1,6 +1,6 @@
 extern crate byteorder;
-extern crate getrandom;
-//extern crate libc;
+//extern crate getrandom;
+extern crate libc;
 
 use std::io::{Read, Seek, SeekFrom, Error as IoError};
 use std::mem::{size_of};
